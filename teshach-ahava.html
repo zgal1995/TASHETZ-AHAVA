@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>תשחץ האהבה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#ffe3ea;
+  --bg2:#fff6f0;
+  --bg3:#ffe9f2;
+  --cream:#fffaf5;
+  --ink:#4a2c3a;
+  --ink-soft:#8a5c6d;
+  --gold:#c79a3e;
+  --deep-red:#8c1f3f;
+  --green-soft:#c9ecd4;
+  --green-soft-text:#2e6b45;
+  --shadow:0 4px 14px rgba(140,60,90,0.14);
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Heebo',sans-serif;
+  color:var(--ink);
+  background:linear-gradient(150deg,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%);
+  overflow:hidden;
+  position:fixed;
+  inset:0;
+}
+
+/* floating hearts background */
+#hearts-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.floating-heart{
+  position:absolute;
+  bottom:-10vh;
+  color:var(--deep-red);
+  opacity:0.22;
+  filter:blur(0.5px);
+  will-change:transform,opacity;
+  animation-name:floatUp;
+  animation-timing-function:ease-in-out;
+  animation-iteration-count:infinite;
+}
+@keyframes floatUp{
+  0%{transform:translateY(0) rotate(0deg);opacity:0;}
+  10%{opacity:0.25;}
+  85%{opacity:0.2;}
+  100%{transform:translateY(-125vh) rotate(12deg);opacity:0;}
+}
+@media (prefers-reduced-motion: reduce){
+  .floating-heart{animation:none;display:none;}
+}
+
+.screen{
+  position:fixed;inset:0;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  z-index:1;
+}
+.screen.active{display:flex;}
+
+/* intro */
+#screen-intro{justify-content:center;gap:34px;padding:24px;text-align:center;}
+.logo{
+  font-family:'Suez One',serif;
+  font-size:clamp(2.1rem,9vw,3.4rem);
+  color:var(--deep-red);
+  line-height:1.3;
+}
+.logo .heart-beat{
+  display:inline-block;
+  color:var(--deep-red);
+  animation:beat 1.15s ease-in-out infinite;
+}
+@keyframes beat{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+.btn-start{
+  font-family:'Heebo',sans-serif;
+  font-weight:700;
+  font-size:1.15rem;
+  color:#fff;
+  background:linear-gradient(135deg,var(--deep-red),#b23a5c);
+  border:none;
+  border-radius:999px;
+  padding:16px 46px;
+  box-shadow:var(--shadow);
+  cursor:pointer;
+}
+.btn-start:active{transform:scale(0.97);}
+
+/* game screen */
+#screen-game.active{width:100%;height:100%;}
+#clue-banner{
+  flex:0 0 auto;
+  width:100%;
+  padding:16px 18px 12px;
+  background:var(--cream);
+  box-shadow:0 2px 10px rgba(140,60,90,.10);
+  text-align:center;
+  min-height:26px;
+  z-index:2;
+}
+#clue-banner-text{
+  font-size:1.05rem;
+  font-weight:700;
+  color:var(--deep-red);
+}
+#stage-title{
+  flex:0 0 auto;
+  text-align:center;
+  font-family:'Suez One',serif;
+  color:var(--ink-soft);
+  padding:8px 0 2px;
+  font-size:0.85rem;
+  letter-spacing:0.5px;
+}
+#puzzle-list{
+  flex:1 1 auto;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  width:100%;
+  max-width:480px;
+  margin:0 auto;
+  padding:10px 16px 60px;
+}
+
+.word-row{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  margin-bottom:26px;
+}
+.clue-text{
+  font-size:0.82rem;
+  color:var(--ink-soft);
+  margin-bottom:8px;
+  text-align:center;
+  max-width:92vw;
+  transition:color 0.25s;
+}
+.word-row.active .clue-text{color:var(--deep-red);font-weight:700;}
+.word-row.solved .clue-text{color:var(--green-soft-text);}
+
+.cell-wrap{
+  position:relative;
+  display:inline-block;
+}
+.cells-row{
+  display:flex;
+  direction:rtl;
+}
+.cell{
+  width:clamp(28px,7.4vw,40px);
+  height:clamp(28px,7.4vw,40px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:clamp(1rem,4.2vw,1.25rem);
+  background:#fffaf5;
+  border:1.5px solid #ddc2c9;
+  color:var(--ink);
+  transition:background 0.3s,border-color 0.3s,color 0.3s;
+}
+.cell:not(:first-child){border-inline-start:none;}
+.cell.marked{
+  border-color:var(--gold);
+  border-width:2px;
+  background:#fff3d8;
+}
+.word-row.active .cell{border-color:#c98a9c;}
+.word-row.active .cell.marked{border-color:var(--gold);}
+.word-row.solved .cell{
+  background:var(--green-soft);
+  border-color:#9fd4af;
+  color:var(--green-soft-text);
+}
+.word-row.solved .cell.marked{
+  background:var(--deep-red);
+  border-color:var(--deep-red);
+  color:#fff;
+  box-shadow:0 0 12px rgba(140,20,60,0.55);
+  animation:spinePop 0.4s ease-out;
+}
+@keyframes spinePop{
+  0%{transform:scale(0.6);}
+  60%{transform:scale(1.18);}
+  100%{transform:scale(1);}
+}
+.hidden-input{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  border:0;
+  padding:0;
+  margin:0;
+  font-size:16px;
+  background:transparent;
+  cursor:pointer;
+}
+.word-row.solved .hidden-input{pointer-events:none;}
+
+@keyframes shakeRow{
+  10%,90%{transform:translateX(-2px);}
+  20%,80%{transform:translateX(4px);}
+  30%,50%,70%{transform:translateX(-7px);}
+  40%,60%{transform:translateX(7px);}
+}
+.word-row.shake{animation:shakeRow 0.4s;}
+
+/* transition screen */
+#screen-transition{justify-content:center;}
+.transition-text{
+  font-family:'Suez One',serif;
+  font-size:clamp(2rem,10vw,3.2rem);
+  color:var(--deep-red);
+  opacity:0;
+  transform:scale(0.85);
+  animation:transitionPop 1.6s ease forwards;
+}
+@keyframes transitionPop{
+  0%{opacity:0;transform:scale(0.8);}
+  30%{opacity:1;transform:scale(1.05);}
+  70%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1);}
+}
+
+/* stage complete overlay */
+#stage-complete-overlay{
+  position:fixed;inset:0;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(74,44,58,0.0);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.5s, background 0.5s;
+  padding:24px;
+  text-align:center;
+}
+#stage-complete-overlay.show{
+  opacity:1;
+  background:rgba(74,44,58,0.55);
+}
+#stage-complete-text{
+  font-family:'Suez One',serif;
+  font-size:clamp(1.6rem,7vw,2.6rem);
+  color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,0.35);
+}
+
+/* ending screen */
+#screen-ending{justify-content:center;gap:0;padding:24px;text-align:center;}
+.ending-lines{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:0.6em;
+}
+.ending-line{
+  font-family:'Suez One',serif;
+  font-size:clamp(1.5rem,7vw,2.5rem);
+  color:var(--deep-red);
+  opacity:0;
+  transform:translateY(0);
+  transition:opacity 1s ease, transform 1.5s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;
+}
+.ending-line.show{opacity:1;}
+#ending-sentence1.moving{transform:translateY(0.9em);}
+#ending-sentence2.moving{transform:translateY(-0.9em);}
+#ending-sentence1.merged-hide{opacity:0;transition:opacity 0.6s ease;}
+#ending-sentence2.merged{
+  transform:translateY(0);
+  white-space:normal;
+  max-width:90vw;
+  font-size:clamp(1.4rem,6.5vw,2.4rem);
+}
+#ending-sentence2.merged.glow{
+  animation:mergeGlow 1.1s ease;
+}
+@keyframes mergeGlow{
+  0%{text-shadow:0 0 0 rgba(199,154,62,0);}
+  40%{text-shadow:0 0 26px rgba(199,154,62,0.9);}
+  100%{text-shadow:0 0 0 rgba(199,154,62,0);}
+}
+#ending-tagline{
+  margin-top:22px;
+  font-size:clamp(0.95rem,3.5vw,1.15rem);
+  color:var(--ink-soft);
+  opacity:0;
+  transition:opacity 1.4s ease;
+}
+#ending-tagline.show{opacity:1;}
+
+/* heart burst */
+.heart-burst-container{position:fixed;inset:0;pointer-events:none;z-index:6;}
+.burst-heart{
+  position:absolute;
+  top:50%;left:50%;
+  color:var(--deep-red);
+  font-size:1.4rem;
+  opacity:1;
+  animation:burstOut 1s ease-out forwards;
+}
+@keyframes burstOut{
+  0%{transform:translate(-50%,-50%) scale(0.4);opacity:1;}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1);opacity:0;}
+}
+
+/* corner buttons */
+.corner-btn{
+  position:fixed;
+  bottom:16px;
+  left:16px;
+  width:42px;height:42px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,0.85);
+  box-shadow:var(--shadow);
+  font-size:1.1rem;
+  cursor:pointer;
+  z-index:10;
+  display:flex;align-items:center;justify-content:center;
+}
+#audio-unlock-btn{left:auto;right:16px;display:none;}
+
+@media (max-width:380px){
+  #puzzle-list{padding:10px 10px 60px;}
+}
+</style>
+</head>
+<body>
+
+<div id="hearts-layer"></div>
+
+<audio id="ending-audio" src="ending.mp3" preload="auto"></audio>
+
+<div id="screen-intro" class="screen active">
+  <div class="logo">תשחץ <span class="heart-beat">♥</span> האהבה</div>
+  <button id="start-btn" class="btn-start">התחלה</button>
+</div>
+
+<div id="screen-game" class="screen">
+  <div id="clue-banner"><span id="clue-banner-text">בחרו שורה כדי להתחיל</span></div>
+  <div id="stage-title"></div>
+  <div id="puzzle-list"></div>
+</div>
+
+<div id="screen-transition" class="screen">
+  <div class="transition-text">שלב 2</div>
+</div>
+
+<div id="screen-ending" class="screen">
+  <div class="ending-lines">
+    <div id="ending-sentence1" class="ending-line"></div>
+    <div id="ending-sentence2" class="ending-line"></div>
+  </div>
+  <div id="ending-tagline"></div>
+</div>
+
+<div id="stage-complete-overlay"><div id="stage-complete-text"></div></div>
+
+<button id="mute-btn" class="corner-btn" aria-label="השתקה">🔊</button>
+<button id="audio-unlock-btn" class="corner-btn" aria-label="הפעלת שיר">🎵</button>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- ending timing constants ---------- */
+var SONG_START_DELAY = 3.5;
+var FADE_DURATION = 2;
+var MERGE_AT = 5;
+var TAGLINE_AT = 8;
+var SONG_OFFSET_SECONDS = 127;
+
+/* ---------- puzzle data ---------- */
+var STAGE1_MESSAGE = "אני אוהב אותך";
+var STAGE1_WORDS = [
+  {answer:"מאה",     clue:"בכמה אחוזים אני בטוח בנו? ___ אחוז"},
+  {answer:"נתניה",   clue:"העיר שבה התחתנו"},
+  {answer:"ספינה",   clue:"על מה הפלגנו בירח הדבש?"},
+  {answer:"מצאתי",   clue:"\"סוף סוף ___ אותך\" (גוף ראשון, עבר)"},
+  {answer:"חתונה",   clue:"25.03.2025, ואת נכנסת לצלילי Love Me Like You Do"},
+  {answer:"מדהימה",  clue:"בטלפון שלי את שמורה בתור: אשתי ה___", markIndex:3, aliases:["מדהים"]},
+  {answer:"אבא",     clue:"התואר שקיבלתי בזכותך"},
+  {answer:"ראש",     clue:"יש לך שם מקום קבוע: ב___ שלי"},
+  {answer:"כוס",     clue:"אני מכין לך בזה תה"},
+  {answer:"חתן",     clue:"מה הייתי ב-25.03.2025?"},
+  {answer:"דרכים",   clue:"כל ה___ מובילות אלייך"}
+];
+
+var STAGE2_MESSAGE = "שיר זכריה";
+var STAGE2_WORDS = [
+  {answer:"עמישב",   clue:"שם הרחוב שבו נפגשנו לראשונה מחוץ למכללה", markIndex:4, aliases:["רחוב עמישב"]},
+  {answer:"ליה",     clue:"הבת הקטנה שלנו"},
+  {answer:"מרץ",     clue:"באיזה חודש התחתנו?"},
+  {answer:"מזל",     clue:"כמה ___ יש לי שאת שלי"},
+  {answer:"הכלנית",  clue:"הרחוב בו הפכנו לבית (בדיוק כמו שכתוב בשלט)", markIndex:2, aliases:["כלנית","רחוב הכלנית"]},
+  {answer:"שיר",     clue:"השם האהוב עליי בעולם", markIndex:3},
+  {answer:"בית",     clue:"המקום שאליו אני רוצה לחזור (כשאת נמצאת שם)"},
+  {answer:"ג'מה",    clue:"הבת השעירה שלנו", markIndex:3, aliases:["גמה"]}
+];
+
+/* ---------- hebrew helpers ---------- */
+var FINAL_TO_REGULAR = {"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+var GERESH_CHARS = "'’‘׳";
+
+function normalizeFinal(c){ return FINAL_TO_REGULAR[c] || c; }
+
+function tokenize(word){
+  var chars = Array.from(word);
+  var tokens = [];
+  for(var i=0;i<chars.length;i++){
+    if(GERESH_CHARS.indexOf(chars[i]) !== -1){
+      if(tokens.length) tokens[tokens.length-1] += chars[i];
+    } else {
+      tokens.push(chars[i]);
+    }
+  }
+  return tokens;
+}
+
+function messageLetters(msg){
+  return Array.from(msg.replace(/\s+/g,""));
+}
+
+function normalizeInput(s){
+  return Array.from(String(s).trim().replace(/\s+/g," "))
+    .filter(function(c){ return GERESH_CHARS.indexOf(c) === -1; })
+    .map(function(c){ return normalizeFinal(c); })
+    .join("");
+}
+
+function validateStage(words, message, stageName){
+  var letters = messageLetters(message);
+  if(letters.length !== words.length){
+    console.warn("["+stageName+"] letter count mismatch: message has "+letters.length+" letters, words array has "+words.length+" words");
+  }
+  words.forEach(function(w, i){
+    var tokens = tokenize(w.answer);
+    var markIdx = w.markIndex;
+    if(!markIdx){
+      if(tokens.length % 2 === 0){
+        console.warn("["+stageName+"] word #"+(i+1)+" \""+w.answer+"\" has even length ("+tokens.length+") and no markIndex specified");
+      }
+      markIdx = Math.ceil(tokens.length/2);
+    }
+    if(markIdx < 1 || markIdx > tokens.length){
+      console.warn("["+stageName+"] word #"+(i+1)+" \""+w.answer+"\" markIndex "+markIdx+" is out of range (length "+tokens.length+")");
+      return;
+    }
+    var got = normalizeFinal(tokens[markIdx-1].charAt(0));
+    var expected = normalizeFinal(letters[i] || "");
+    if(got !== expected){
+      console.warn("["+stageName+"] word #"+(i+1)+" \""+w.answer+"\" marked letter \""+tokens[markIdx-1]+"\" (position "+markIdx+") does not match expected \""+letters[i]+"\" for message position "+(i+1));
+    }
+  });
+}
+
+validateStage(STAGE1_WORDS, STAGE1_MESSAGE, "שלב 1");
+validateStage(STAGE2_WORDS, STAGE2_MESSAGE, "שלב 2");
+
+/* ---------- floating hearts ---------- */
+function initHearts(){
+  var layer = document.getElementById("hearts-layer");
+  var count = 13;
+  for(var i=0;i<count;i++){
+    var h = document.createElement("div");
+    h.className = "floating-heart";
+    h.textContent = "♥";
+    var edge = Math.random() < 0.5;
+    var left = edge ? (Math.random()*13) : (87 + Math.random()*13);
+    h.style.left = left + "%";
+    var size = 14 + Math.random()*22;
+    h.style.fontSize = size + "px";
+    var duration = 14 + Math.random()*10;
+    h.style.animationDuration = duration + "s";
+    h.style.animationDelay = (-Math.random()*duration) + "s";
+    layer.appendChild(h);
+  }
+}
+
+function spawnHeartBurst(){
+  var container = document.createElement("div");
+  container.className = "heart-burst-container";
+  var n = 14;
+  for(var i=0;i<n;i++){
+    var h = document.createElement("div");
+    h.className = "burst-heart";
+    h.textContent = "♥";
+    var angle = (Math.PI*2*i/n) + Math.random()*0.3;
+    var dist = 70 + Math.random()*90;
+    h.style.setProperty("--dx", Math.cos(angle)*dist + "px");
+    h.style.setProperty("--dy", Math.sin(angle)*dist + "px");
+    h.style.animationDelay = (Math.random()*0.15) + "s";
+    container.appendChild(h);
+  }
+  document.body.appendChild(container);
+  setTimeout(function(){ container.remove(); }, 1400);
+}
+
+/* ---------- screen management ---------- */
+function switchScreen(name){
+  var screens = document.querySelectorAll(".screen");
+  screens.forEach(function(s){ s.classList.remove("active"); });
+  document.getElementById("screen-"+name).classList.add("active");
+}
+
+/* ---------- puzzle rendering ---------- */
+var activeResizeHandler = null;
+function renderStage(words, message, stageKey, stageLabel, onStageComplete){
+  if(activeResizeHandler){
+    window.removeEventListener("resize", activeResizeHandler);
+    activeResizeHandler = null;
+  }
+  var list = document.getElementById("puzzle-list");
+  list.innerHTML = "";
+  document.getElementById("stage-title").textContent = stageLabel;
+  document.getElementById("clue-banner-text").textContent = "בחרו שורה כדי להתחיל";
+
+  var letters = messageLetters(message);
+  var solvedCount = 0;
+  var rows = [];
+
+  words.forEach(function(word, idx){
+    var tokens = tokenize(word.answer);
+    var markIdx = word.markIndex || Math.ceil(tokens.length/2);
+
+    var row = document.createElement("div");
+    row.className = "word-row";
+
+    var clueText = document.createElement("div");
+    clueText.className = "clue-text";
+    clueText.textContent = word.clue;
+
+    var cellWrap = document.createElement("div");
+    cellWrap.className = "cell-wrap";
+
+    var cellsRow = document.createElement("div");
+    cellsRow.className = "cells-row";
+    var cellEls = tokens.map(function(tok, i){
+      var cell = document.createElement("div");
+      cell.className = "cell" + (i === markIdx-1 ? " marked" : "");
+      cellsRow.appendChild(cell);
+      return cell;
+    });
+
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "hidden-input";
+    input.autocomplete = "off";
+    input.autocapitalize = "off";
+    input.spellcheck = false;
+    input.maxLength = tokens.length + 3;
+
+    cellWrap.appendChild(cellsRow);
+    cellWrap.appendChild(input);
+    row.appendChild(clueText);
+    row.appendChild(cellWrap);
+    list.appendChild(row);
+
+    var st = {row:row, clueText:clueText, cellWrap:cellWrap, input:input, cells:cellEls,
+              word:word, tokens:tokens, markIdx:markIdx, solved:false};
+    rows.push(st);
+
+    function activate(){
+      rows.forEach(function(r){ r.row.classList.remove("active"); });
+      row.classList.add("active");
+      document.getElementById("clue-banner-text").textContent = word.clue;
+      row.scrollIntoView({behavior:"smooth", block:"center"});
+    }
+
+    input.addEventListener("focus", activate);
+    row.addEventListener("click", function(e){
+      if(e.target !== input && !st.solved) input.focus();
+    });
+
+    function updateCellsFromInput(){
+      var typedTokens = tokenize(input.value);
+      cellEls.forEach(function(cell, i){
+        cell.textContent = typedTokens[i] || "";
+      });
+    }
+
+    function attemptSolve(){
+      if(st.solved) return true;
+      var val = normalizeInput(input.value);
+      if(!val) return false;
+      var candidates = [word.answer].concat(word.aliases||[]).map(normalizeInput);
+      if(candidates.indexOf(val) !== -1){
+        solveRow(st);
+        return true;
+      }
+      return false;
+    }
+
+    input.addEventListener("input", function(){
+      updateCellsFromInput();
+      attemptSolve();
+    });
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        e.preventDefault();
+        if(!attemptSolve()){
+          row.classList.add("shake");
+          setTimeout(function(){ row.classList.remove("shake"); }, 420);
+        }
+      }
+    });
+  });
+
+  function solveRow(st){
+    st.solved = true;
+    solvedCount++;
+    var canonicalLetter = letters[rows.indexOf(st)];
+
+    st.cells.forEach(function(cell, i){
+      cell.textContent = (i === st.markIdx-1) ? canonicalLetter : st.tokens[i];
+    });
+    st.input.disabled = true;
+    st.row.classList.add("solved");
+    st.row.classList.remove("active");
+
+    var next = rows.find(function(r){ return !r.solved; });
+    if(next){
+      next.input.focus();
+    } else {
+      document.getElementById("clue-banner-text").textContent = "כל הכבוד!";
+    }
+
+    if(solvedCount === words.length){
+      setTimeout(function(){ onStageComplete(); }, 500);
+    }
+  }
+
+  function alignRow(st){
+    st.cellWrap.style.transform = "translateX(0px)";
+    var markedCell = st.cells[st.markIdx-1];
+    var listRect = list.getBoundingClientRect();
+    var targetX = listRect.left + listRect.width/2;
+    var cellRect = markedCell.getBoundingClientRect();
+    var delta = targetX - (cellRect.left + cellRect.width/2);
+    st.cellWrap.style.transform = "translateX(" + delta + "px)";
+  }
+
+  function alignAll(){
+    rows.forEach(alignRow);
+  }
+
+  var resizeTimer = null;
+  activeResizeHandler = function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(alignAll, 150);
+  };
+  window.addEventListener("resize", activeResizeHandler);
+
+  requestAnimationFrame(alignAll);
+
+  if(rows.length){
+    rows[0].row.classList.add("active");
+    document.getElementById("clue-banner-text").textContent = rows[0].word.clue;
+  }
+}
+
+function showStageComplete(sentence, cb){
+  var overlay = document.getElementById("stage-complete-overlay");
+  var text = document.getElementById("stage-complete-text");
+  text.textContent = sentence;
+  overlay.classList.add("show");
+  spawnHeartBurst();
+  setTimeout(function(){
+    overlay.classList.remove("show");
+    setTimeout(cb, 500);
+  }, 2200);
+}
+
+/* ---------- audio ---------- */
+var audioEl = document.getElementById("ending-audio");
+var audioCtx = null, gainNode = null, sourceNode = null, songFailed = false;
+/* under file:// each local resource is an opaque origin, so
+   createMediaElementSource() silently zeroes its output (CORS taint) —
+   skip the Web Audio graph there and fall back to a plain volume fade.
+   Once served over http(s) (GitHub Pages), the real origin lets the
+   Web Audio route run, which is what iOS needs for a working fade. */
+var useWebAudioGraph = window.location.protocol !== "file:";
+
+function audioLog(){
+  var args = Array.prototype.slice.call(arguments);
+  console.log.apply(console, ["[audio]"].concat(args));
+}
+
+audioEl.addEventListener("error", function(){
+  songFailed = true;
+  var err = audioEl.error;
+  audioLog("element error event, code=", err && err.code, "message=", err && err.message);
+});
+audioEl.addEventListener("canplaythrough", function(){ audioLog("canplaythrough, duration=", audioEl.duration); });
+audioEl.addEventListener("stalled", function(){ audioLog("stalled"); });
+audioEl.addEventListener("playing", function(){ audioLog("native 'playing' event fired, currentTime=", audioEl.currentTime, "volume=", audioEl.volume, "muted=", audioEl.muted); });
+
+function initAudioGraph(){
+  if(!useWebAudioGraph){ audioLog("initAudioGraph skipped, running under file:// (Web Audio would be CORS-muted)"); return; }
+  if(sourceNode || songFailed){ audioLog("initAudioGraph skipped, sourceNode=", !!sourceNode, "songFailed=", songFailed); return; }
+  try{
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new Ctx();
+    sourceNode = audioCtx.createMediaElementSource(audioEl);
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0;
+    sourceNode.connect(gainNode).connect(audioCtx.destination);
+    audioLog("graph created, initial ctx state=", audioCtx.state);
+  }catch(e){
+    audioLog("initAudioGraph threw:", e && e.message);
+    audioCtx = null; gainNode = null; sourceNode = null;
+  }
+}
+
+function silentUnlock(){
+  initAudioGraph();
+  if(audioCtx && audioCtx.state === "suspended"){
+    audioCtx.resume().then(function(){ audioLog("silentUnlock resume ok, state=", audioCtx.state); })
+      .catch(function(e){ audioLog("silentUnlock resume failed:", e && e.message); });
+  }
+  audioEl.play().then(function(){
+    audioLog("silentUnlock play() resolved");
+    audioEl.pause();
+    audioEl.currentTime = 0;
+  }).catch(function(e){ audioLog("silentUnlock play() rejected:", e && e.message); });
+}
+
+function fadeInStep(){
+  if(gainNode && audioCtx){
+    audioLog("fadeInStep via WebAudio gain, ctx state=", audioCtx.state);
+    var now = audioCtx.currentTime;
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(1, now + FADE_DURATION);
+  } else {
+    audioLog("fadeInStep via element volume (no WebAudio graph)");
+    audioEl.volume = 0;
+    var start = performance.now();
+    (function step(){
+      var p = Math.min(1, (performance.now()-start)/(FADE_DURATION*1000));
+      audioEl.volume = p;
+      if(p < 1) requestAnimationFrame(step);
+    })();
+  }
+}
+
+function playEndingSong(){
+  audioLog("playEndingSong called, songFailed=", songFailed, "ctx state=", audioCtx && audioCtx.state);
+  if(songFailed) return;
+  try{ audioEl.currentTime = SONG_OFFSET_SECONDS; }catch(e){ audioLog("setting currentTime threw:", e && e.message); }
+  function startPlayback(){
+    audioLog("startPlayback, calling audioEl.play()");
+    audioEl.play().then(function(){
+      audioLog("audioEl.play() resolved");
+      fadeInStep();
+      document.getElementById("audio-unlock-btn").style.display = "none";
+    }).catch(function(e){
+      audioLog("audioEl.play() rejected:", e && e.message);
+      document.getElementById("audio-unlock-btn").style.display = "flex";
+    });
+  }
+  if(audioCtx && audioCtx.state === "suspended"){
+    audioLog("ctx suspended, resuming before playback");
+    audioCtx.resume().then(startPlayback).catch(function(e){ audioLog("resume before playback failed:", e && e.message); startPlayback(); });
+  } else {
+    startPlayback();
+  }
+}
+
+/* the AudioContext can be auto-suspended by the browser after long
+   inactivity; resuming requires a fresh user gesture, so we piggyback
+   on every tap/keystroke made while solving the puzzle to keep it alive
+   well before the ending sequence needs it. */
+function nudgeAudioContext(){
+  if(audioCtx && audioCtx.state === "suspended"){
+    audioCtx.resume().catch(function(){});
+  }
+}
+document.addEventListener("click", nudgeAudioContext);
+document.addEventListener("touchend", nudgeAudioContext);
+document.addEventListener("keydown", nudgeAudioContext);
+
+document.getElementById("audio-unlock-btn").addEventListener("click", function(){
+  initAudioGraph();
+  playEndingSong();
+});
+
+document.getElementById("mute-btn").addEventListener("click", function(){
+  audioEl.muted = !audioEl.muted;
+  document.getElementById("mute-btn").textContent = audioEl.muted ? "🔇" : "🔊";
+});
+
+/* ---------- ending sequence ---------- */
+function startEnding(){
+  var line1 = document.getElementById("ending-sentence1");
+  var line2 = document.getElementById("ending-sentence2");
+  var tagline = document.getElementById("ending-tagline");
+
+  [line1, line2].forEach(function(el){
+    el.className = "ending-line";
+  });
+  tagline.className = "";
+  tagline.textContent = "";
+
+  line1.textContent = STAGE1_MESSAGE;
+  line2.textContent = STAGE2_MESSAGE;
+
+  setTimeout(function(){
+    line1.classList.add("show");
+    line2.classList.add("show");
+  }, 1000);
+
+  setTimeout(function(){
+    line1.classList.add("moving");
+    line2.classList.add("moving");
+    playEndingSong();
+  }, SONG_START_DELAY*1000);
+
+  setTimeout(function(){
+    line1.classList.add("merged-hide");
+    line2.textContent = STAGE1_MESSAGE + " " + STAGE2_MESSAGE;
+    line2.classList.add("merged");
+    requestAnimationFrame(function(){ line2.classList.add("glow"); });
+    spawnHeartBurst();
+  }, MERGE_AT*1000);
+
+  setTimeout(function(){
+    tagline.textContent = "מסתכלים קדימה חזקים מאי פעם";
+    tagline.classList.add("show");
+  }, TAGLINE_AT*1000);
+}
+
+/* ---------- flow ---------- */
+document.getElementById("start-btn").addEventListener("click", function(){
+  silentUnlock();
+  switchScreen("game");
+  renderStage(STAGE1_WORDS, STAGE1_MESSAGE, "s1", "שלב 1 מתוך 2", function(){
+    showStageComplete(STAGE1_MESSAGE, function(){
+      switchScreen("transition");
+      setTimeout(function(){
+        switchScreen("game");
+        renderStage(STAGE2_WORDS, STAGE2_MESSAGE, "s2", "שלב 2 מתוך 2", function(){
+          showStageComplete(STAGE2_MESSAGE, function(){
+            switchScreen("ending");
+            startEnding();
+          });
+        });
+      }, 1700);
+    });
+  });
+});
+
+initHearts();
+
+})();
+</script>
+</body>
+</html>
